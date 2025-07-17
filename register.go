@@ -1,15 +1,17 @@
 package pushgateway
 
 import (
-	"github.com/martymarron/xk6-output-prometheus-pushgateway/pkg/pushgateway"
+	"github.com/wesnel/xk6-output-prometheus-pushgateway/pkg/extension"
 
+	"github.com/prometheus/client_golang/prometheus"
 	"go.k6.io/k6/output"
 )
 
+const name = "xk6-output-prometheus-pushgateway"
+
 func init() {
-	name := "output-prometheus-pushgateway"
 	output.RegisterExtension(name, func(p output.Params) (output.Output, error) {
 		p.Logger = p.Logger.WithField("component", name)
-		return pushgateway.New(p)
+		return extension.New(p, prometheus.NewRegistry())
 	})
 }
