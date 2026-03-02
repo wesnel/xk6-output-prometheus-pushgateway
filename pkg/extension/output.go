@@ -16,12 +16,18 @@ import (
 	"go.k6.io/k6/output"
 )
 
+// Registerer combines prometheus.Registerer and prometheus.Gatherer so that
+// metrics can be both registered and gathered through a single value (e.g. a
+// *prometheus.Registry).
 type Registerer interface {
 	prometheus.Registerer
 	prometheus.Gatherer
 }
 
-// Output implements the lib.Output interface
+// Output is a k6 output extension that periodically flushes k6 metric samples
+// to a Prometheus Pushgateway. It aggregates samples by time series, maps them
+// to the corresponding Prometheus collectors (counters, gauges, histograms),
+// and pushes the results on a configurable interval.
 type Output struct {
 	output.SampleBuffer
 
@@ -106,12 +112,16 @@ func (t *trend) value() float64 {
 // var _ output.WithBuiltinMetrics = new(Output)
 var _ output.Output = new(Output)
 
+// Sentinel errors returned when processing or pushing metrics fails.
 var (
 	ErrAddingMetricDataPoint = errors.New("error adding metric data point")
 	ErrPushingMetrics        = errors.New("error pushing metrics")
 )
 
-// New creates an instance of the collector
+// New creates a new Output from the given k6 output.Params and Prometheus
+// Registerer. It parses the extension configuration, registers a Prometheus
+// collector for each configured metric, and sets up a Pusher targeting the
+// configured Pushgateway URL.
 func New(
 	params output.Params,
 	registerer Registerer,
